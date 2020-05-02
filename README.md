@@ -1,22 +1,49 @@
-# \${PROJECT_NAME}
+# loopback-component-filter
 
-\${PROJECT_DESCRIPTION}
-
-## Dependencies
-
-\${PROJECT_MODULES}
+Using this simple extension you can filter models in repository level.
 
 ---
 
-## Building
+## Installation
 
-\${PROJECT_BUILD}
+```bash
+npm i --save loopback-component-filter
+```
 
 ---
 
-## Testing
+## Usage
 
-\${PROJECT_BUILD_ASSCINEMA_REC}
+### Filter Repository Mixin
+
+Change your repository parent class from `DefaultCrudRepository` to `FilterCrudRepositoryMixin(configs)()`
+
+#### Example
+
+Change your repository from:
+
+```ts
+export class UserRepository extends DefaultCrudRepository<
+    User,
+    typeof User.prototype.id,
+    UserRelations
+> {
+    // ...
+}
+```
+
+To:
+
+```ts
+import { FilterCrudRepositoryMixin } from "loopback-component-filter";
+
+export class UserRepository extends FilterCrudRepositoryMixin<
+    User,
+    UserRelations
+>(configs)() {
+    // ...
+}
+```
 
 ---
 
