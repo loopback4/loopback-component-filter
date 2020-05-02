@@ -13,6 +13,11 @@ import {
 import { Ctor } from "../types";
 
 /**
+ * Repository Config
+ */
+export interface RepositoryConfig {}
+
+/**
  * Repository Type
  */
 export interface FilterCrudRepository<
@@ -28,7 +33,7 @@ export function FilterCrudRepositoryMixin<
     Model extends Entity,
     ModelID,
     ModelRelations extends object = {}
->() {
+>(config: RepositoryConfig) {
     /**
      * Return function with generic type of repository class, returns mixed in class
      *
