@@ -35,7 +35,7 @@ export interface RepositoryConfig<
     ModelID,
     ModelRelations extends object = {}
 > {
-    id: string;
+    id: keyof Model;
     where: (
         context: FilterContext<Model, ModelID, ModelRelations>,
         where: Where<Model>
