@@ -39,8 +39,19 @@ import { FilterCrudRepositoryMixin } from "loopback-component-filter";
 
 export class UserRepository extends FilterCrudRepositoryMixin<
     User,
+    string,
     UserRelations
->(configs)() {
+>({
+    id: "id",
+    where: async (
+        context,
+        where
+    ) => where;
+    fields: async (
+        context,
+        fields
+    ) => fields;
+})() {
     // ...
 }
 ```
