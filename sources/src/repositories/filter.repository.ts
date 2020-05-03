@@ -1,12 +1,16 @@
+import { InvocationArgs, InvocationContext } from "@loopback/context";
+import { Application, CoreBindings } from "@loopback/core";
 import {
     juggler,
     Class,
     DefaultCrudRepository,
+    EntityNotFoundError,
     DataObject,
     Options,
     Entity,
     Filter,
     Where,
+    Fields,
     Count,
 } from "@loopback/repository";
 
@@ -15,7 +19,32 @@ import { Ctor } from "../types";
 /**
  * Repository Config
  */
-export interface RepositoryConfig {}
+export interface FilterContext<
+    Model extends Entity,
+    ModelID,
+    ModelRelations extends object = {}
+> {
+    target: DefaultCrudRepository<Model, ModelID, ModelRelations>;
+    methodName: keyof DefaultCrudRepository<Model, ModelID, ModelRelations>;
+    args: InvocationArgs;
+    invocationContext: InvocationContext;
+}
+
+export interface RepositoryConfig<
+    Model extends Entity,
+    ModelID,
+    ModelRelations extends object = {}
+> {
+    id: string;
+    where: (
+        context: FilterContext<Model, ModelID, ModelRelations>,
+        where: Where<Model>
+    ) => Promise<Where<Model>>;
+    fields: (
+        context: FilterContext<Model, ModelID, ModelRelations>,
+        fields: Fields<Model>
+    ) => Promise<Fields<Model>>;
+}
 
 /**
  * Repository Type
@@ -33,7 +62,7 @@ export function FilterCrudRepositoryMixin<
     Model extends Entity,
     ModelID,
     ModelRelations extends object = {}
->(config: RepositoryConfig) {
+>(config: RepositoryConfig<Model, ModelID, ModelRelations>) {
     /**
      * Return function with generic type of repository class, returns mixed in class
      *
@@ -55,25 +84,41 @@ export function FilterCrudRepositoryMixin<
 
         class Repository extends parentClass
             implements FilterCrudRepository<Model, ModelID, ModelRelations> {
-            constructor(ctor: Ctor<Model>, dataSource: juggler.DataSource) {
+            private application: Application;
+
+            constructor(
+                ctor: Ctor<Model>,
+                dataSource: juggler.DataSource,
+                application: Application
+            ) {
                 super(ctor, dataSource);
+
+                this.application = application;
             }
 
             /**
-             * Create methods
+             * Get FilterContext method
              */
-            async create(
-                entity: DataObject<Model>,
-                options?: Options
-            ): Promise<Model> {
-                return super.create(entity, options);
-            }
-
-            async createAll(
-                entities: DataObject<Model>[],
-                options?: Options
-            ): Promise<Model[]> {
-                return super.createAll(entities, options);
+            private getFilterContext(
+                args: IArguments
+            ): FilterContext<Model, ModelID, ModelRelations> {
+                return {
+                    target: this,
+                    methodName: args.callee.name as any,
+                    args: Array.from(args),
+                    invocationContext: new InvocationContext(
+                        this.application,
+                        this.application.getSync(
+                            CoreBindings.CONTROLLER_CURRENT
+                        ) as any,
+                        this.application.getSync(
+                            CoreBindings.CONTROLLER_METHOD_NAME
+                        ),
+                        this.application.getSync(
+                            CoreBindings.CONTROLLER_METHOD_META
+                        )
+                    ),
+                };
             }
 
             /**
@@ -83,14 +128,44 @@ export function FilterCrudRepositoryMixin<
                 filter?: Filter<Model>,
                 options?: Options
             ): Promise<(Model & ModelRelations)[]> {
-                return super.find(filter, options);
+                const filterContext = this.getFilterContext(arguments);
+
+                return await super.find(
+                    {
+                        ...filter,
+                        where: await config.where(
+                            filterContext,
+                            filter?.where || {}
+                        ),
+                        fields: await config.fields(
+                            filterContext,
+                            filter?.fields || {}
+                        ),
+                    },
+                    options
+                );
             }
 
             async findOne(
                 filter?: Filter<Model>,
                 options?: Options
             ): Promise<(Model & ModelRelations) | null> {
-                return super.findOne(filter, options);
+                const filterContext = this.getFilterContext(arguments);
+
+                return await super.findOne(
+                    {
+                        ...filter,
+                        where: await config.where(
+                            filterContext,
+                            filter?.where || {}
+                        ),
+                        fields: await config.fields(
+                            filterContext,
+                            filter?.fields || {}
+                        ),
+                    },
+                    options
+                );
             }
 
             async findById(
@@ -98,25 +173,62 @@ export function FilterCrudRepositoryMixin<
                 filter?: Filter<Model>,
                 options?: Options
             ): Promise<Model & ModelRelations> {
-                return super.findById(id, filter, options);
+                const item = await this.findOne(
+                    {
+                        ...filter,
+                        where: filter?.where
+                            ? {
+                                  and: [
+                                      filter.where,
+                                      {
+                                          [config.id as any]: id,
+                                      },
+                                  ],
+                              }
+                            : {
+                                  [config.id as any]: id,
+                              },
+                    },
+                    options
+                );
+
+                if (!item) {
+                    throw new EntityNotFoundError(this.entityClass, id);
+                }
+
+                return item;
             }
 
             async count(
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                return super.count(where, options);
+                const filterContext = this.getFilterContext(arguments);
+
+                return await super.count(
+                    await config.where(filterContext, where || {}),
+                    options
+                );
             }
 
             async exists(id: ModelID, options?: Options): Promise<boolean> {
-                return super.exists(id, options);
+                const count = await this.count(
+                    { [config.id as any]: id },
+                    options
+                );
+
+                return count.count > 0;
             }
 
             /**
              * Update methods
              */
             async update(entity: Model, options?: Options): Promise<void> {
-                return super.update(entity, options);
+                await super.updateAll(
+                    entity,
+                    { [config.id as any]: (entity as any)[config.id] },
+                    options
+                );
             }
 
             async updateAll(
@@ -124,7 +236,13 @@ export function FilterCrudRepositoryMixin<
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                return super.updateAll(data, where, options);
+                const filterContext = this.getFilterContext(arguments);
+
+                return await super.updateAll(
+                    data,
+                    await config.where(filterContext, where || {}),
+                    options
+                );
             }
 
             async updateById(
@@ -132,7 +250,7 @@ export function FilterCrudRepositoryMixin<
                 data: DataObject<Model>,
                 options?: Options
             ): Promise<void> {
-                return super.updateById(id, data, options);
+                await this.updateAll(data, { [config.id as any]: id }, options);
             }
 
             async replaceById(
@@ -140,25 +258,33 @@ export function FilterCrudRepositoryMixin<
                 data: DataObject<Model>,
                 options?: Options
             ): Promise<void> {
-                return super.replaceById(id, data, options);
+                await this.updateAll(data, { [config.id as any]: id }, options);
             }
 
             /**
              * Delete methods
              */
             async delete(entity: Model, options?: Options): Promise<void> {
-                return super.delete(entity, options);
+                await super.deleteAll(
+                    { [config.id as any]: (entity as any)[config.id] },
+                    options
+                );
             }
 
             async deleteAll(
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                return super.deleteAll(where, options);
+                const filterContext = this.getFilterContext(arguments);
+
+                return await super.deleteAll(
+                    await config.where(filterContext, where || {}),
+                    options
+                );
             }
 
             async deleteById(id: ModelID, options?: Options): Promise<void> {
-                return super.deleteById(id, options);
+                await this.deleteAll({ [config.id as any]: id }, options);
             }
         }
 
