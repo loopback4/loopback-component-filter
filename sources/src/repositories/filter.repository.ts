@@ -1,5 +1,4 @@
-import { InvocationArgs, InvocationContext } from "@loopback/context";
-import { Application, CoreBindings } from "@loopback/core";
+import { InvocationContext } from "@loopback/context";
 import {
     juggler,
     Class,
@@ -16,32 +15,14 @@ import {
 
 import { Ctor } from "../types";
 
-/**
- * Repository Config
- */
-export interface FilterContext<
-    Model extends Entity,
-    ModelID,
-    ModelRelations extends object = {}
-> {
-    target: DefaultCrudRepository<Model, ModelID, ModelRelations>;
-    methodName: keyof DefaultCrudRepository<Model, ModelID, ModelRelations>;
-    args: InvocationArgs;
-    invocationContext: InvocationContext;
-}
-
-export interface RepositoryConfig<
-    Model extends Entity,
-    ModelID,
-    ModelRelations extends object = {}
-> {
+export interface RepositoryConfig<Model extends Entity> {
     id: keyof Model;
     where: (
-        context: FilterContext<Model, ModelID, ModelRelations>,
+        context: InvocationContext,
         where: Where<Model>
     ) => Promise<Where<Model>>;
     fields: (
-        context: FilterContext<Model, ModelID, ModelRelations>,
+        context: InvocationContext,
         fields: Fields<Model>
     ) => Promise<Fields<Model>>;
 }
@@ -62,7 +43,7 @@ export function FilterCrudRepositoryMixin<
     Model extends Entity,
     ModelID,
     ModelRelations extends object = {}
->(config: RepositoryConfig<Model, ModelID, ModelRelations>) {
+>(config: RepositoryConfig<Model>) {
     /**
      * Return function with generic type of repository class, returns mixed in class
      *
@@ -84,41 +65,8 @@ export function FilterCrudRepositoryMixin<
 
         class Repository extends parentClass
             implements FilterCrudRepository<Model, ModelID, ModelRelations> {
-            private application: Application;
-
-            constructor(
-                ctor: Ctor<Model>,
-                dataSource: juggler.DataSource,
-                application: Application
-            ) {
+            constructor(ctor: Ctor<Model>, dataSource: juggler.DataSource) {
                 super(ctor, dataSource);
-
-                this.application = application;
-            }
-
-            /**
-             * Get FilterContext method
-             */
-            private getFilterContext(
-                args: IArguments
-            ): FilterContext<Model, ModelID, ModelRelations> {
-                return {
-                    target: this,
-                    methodName: args.callee.name as any,
-                    args: Array.from(args),
-                    invocationContext: new InvocationContext(
-                        this.application,
-                        this.application.getSync(
-                            CoreBindings.CONTROLLER_CURRENT
-                        ) as any,
-                        this.application.getSync(
-                            CoreBindings.CONTROLLER_METHOD_NAME
-                        ),
-                        this.application.getSync(
-                            CoreBindings.CONTROLLER_METHOD_META
-                        )
-                    ),
-                };
             }
 
             /**
@@ -128,7 +76,12 @@ export function FilterCrudRepositoryMixin<
                 filter?: Filter<Model>,
                 options?: Options
             ): Promise<(Model & ModelRelations)[]> {
-                const filterContext = this.getFilterContext(arguments);
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "read",
+                    Array.from(arguments)
+                );
 
                 return await super.find(
                     {
@@ -150,7 +103,12 @@ export function FilterCrudRepositoryMixin<
                 filter?: Filter<Model>,
                 options?: Options
             ): Promise<(Model & ModelRelations) | null> {
-                const filterContext = this.getFilterContext(arguments);
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "read",
+                    Array.from(arguments)
+                );
 
                 return await super.findOne(
                     {
@@ -203,7 +161,12 @@ export function FilterCrudRepositoryMixin<
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                const filterContext = this.getFilterContext(arguments);
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "count",
+                    Array.from(arguments)
+                );
 
                 return await super.count(
                     await config.where(filterContext, where || {}),
@@ -236,7 +199,12 @@ export function FilterCrudRepositoryMixin<
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                const filterContext = this.getFilterContext(arguments);
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "update",
+                    Array.from(arguments)
+                );
 
                 return await super.updateAll(
                     data,
@@ -275,7 +243,12 @@ export function FilterCrudRepositoryMixin<
                 where?: Where<Model>,
                 options?: Options
             ): Promise<Count> {
-                const filterContext = this.getFilterContext(arguments);
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "delete",
+                    Array.from(arguments)
+                );
 
                 return await super.deleteAll(
                     await config.where(filterContext, where || {}),

@@ -1,5 +1,7 @@
 # loopback-component-filter
 
+[![Build Status](https://travis-ci.com/loopback4/loopback-component-filter.svg?branch=master)](https://travis-ci.com/loopback4/loopback-component-filter)
+
 Using this simple extension you can filter models in repository level.
 
 ---
