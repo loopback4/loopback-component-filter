@@ -18,7 +18,7 @@ npm i --save loopback-component-filter
 
 ### Filter Repository Mixin
 
-Change your repository parent class from `DefaultCrudRepository` to `FilterCrudRepositoryMixin(configs)()`
+Change your repository parent class from `DefaultCrudRepository` to `FilterRepositoryMixin(configs)()`
 
 #### Example
 
@@ -37,9 +37,9 @@ export class UserRepository extends DefaultCrudRepository<
 To:
 
 ```ts
-import { FilterCrudRepositoryMixin } from "loopback-component-filter";
+import { FilterRepositoryMixin } from "loopback-component-filter";
 
-export class UserRepository extends FilterCrudRepositoryMixin<
+export class UserRepository extends FilterRepositoryMixin<
     User,
     string,
     UserRelations

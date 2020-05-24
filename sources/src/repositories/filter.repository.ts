@@ -30,7 +30,7 @@ export interface RepositoryConfig<Model extends Entity> {
 /**
  * Repository Type
  */
-export interface FilterCrudRepository<
+export interface FilterRepository<
     Model extends Entity,
     ModelID,
     ModelRelations extends object = {}
@@ -39,7 +39,7 @@ export interface FilterCrudRepository<
 /**
  * Repository Mixin
  */
-export function FilterCrudRepositoryMixin<
+export function FilterRepositoryMixin<
     Model extends Entity,
     ModelID,
     ModelRelations extends object = {}
@@ -56,7 +56,7 @@ export function FilterCrudRepositoryMixin<
     >(
         superClass?: RepositoryClass
     ): RepositoryClass &
-        Class<FilterCrudRepository<Model, ModelID, ModelRelations>> {
+        Class<FilterRepository<Model, ModelID, ModelRelations>> {
         const parentClass: Class<DefaultCrudRepository<
             Model,
             ModelID,
@@ -64,7 +64,7 @@ export function FilterCrudRepositoryMixin<
         >> = superClass || DefaultCrudRepository;
 
         class Repository extends parentClass
-            implements FilterCrudRepository<Model, ModelID, ModelRelations> {
+            implements FilterRepository<Model, ModelID, ModelRelations> {
             constructor(ctor: Ctor<Model>, dataSource: juggler.DataSource) {
                 super(ctor, dataSource);
             }
