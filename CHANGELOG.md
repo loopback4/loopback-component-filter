@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0
+
+-   **Deps**: update packages
+
 ## v0.4.0
 
 -   **Feat**: enable unit testing with `ts-node`
