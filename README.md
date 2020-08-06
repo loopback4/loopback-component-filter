@@ -1,6 +1,9 @@
 # loopback-component-filter
 
-[![Build Status](https://travis-ci.com/loopback4/loopback-component-filter.svg?branch=master)](https://travis-ci.com/loopback4/loopback-component-filter)
+![Travis (.org) branch](https://img.shields.io/travis/loopback4/loopback-component-filter/master)
+![npm](https://img.shields.io/npm/v/loopback-component-filter)
+![npm bundle size](https://img.shields.io/bundlephobia/min/loopback-component-filter)
+![GitHub](https://img.shields.io/github/license/loopback4/loopback-component-filter)
 
 Using this simple extension you can filter models in repository level.
 
@@ -41,19 +44,14 @@ import { FilterRepositoryMixin } from "loopback-component-filter";
 
 export class UserRepository extends FilterRepositoryMixin<
     User,
-    string,
+    typeof User.prototype.id,
     UserRelations
 >({
-    id: "id",
-    where: async (
-        context,
-        where
-    ) => where;
-    fields: async (
-        context,
-        fields
-    ) => fields;
-})() {
+    where: async (context, where) => where,
+    fields: async (context, fields) => fields,
+})<Constructor<DefaultCrudRepository<User, string, UserRelations>>>(
+    DefaultCrudRepository
+) {
     // ...
 }
 ```
@@ -66,5 +64,5 @@ export class UserRepository extends FilterRepositoryMixin<
 
 ## License
 
-This project is licensed under the [MIT license](LICENSE).  
+This project is licensed under the [MIT license](LICENSE.md).  
 Copyright (c) KoLiBer (koliberr136a1@gmail.com)
