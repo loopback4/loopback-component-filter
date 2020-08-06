@@ -4,23 +4,27 @@ import { juggler } from "@loopback/repository";
 import { User } from "./test.model";
 import { UserRepository } from "./test.repository";
 
-describe("Read Model", () => {
+describe("Read Model", async () => {
     const datasource: juggler.DataSource = new juggler.DataSource({
         name: "db",
         connector: "memory",
     });
     const userRepository = new UserRepository(User, datasource);
+    await userRepository.create({
+        id: "1",
+        username: "user1",
+        password: "123",
+    });
 
     it("find() Test", async () => {
         await userRepository.deleteAll({});
         await userRepository.createAll([
-            { id: "1", username: "user1", password: "123" },
             { id: "2", username: "user2", password: "231" },
             { id: "3", username: "user3", password: "321" },
         ]);
 
         /**
-         * Test find using where
+         * Test find by where
          */
         expect(
             await userRepository.find({
@@ -37,36 +41,65 @@ describe("Read Model", () => {
     it("findOne() Test", async () => {
         await userRepository.deleteAll({});
         await userRepository.createAll([
-            { id: "1", username: "user1", password: "123" },
             { id: "2", username: "user2", password: "231" },
             { id: "3", username: "user3", password: "321" },
         ]);
+
+        /**
+         * Test findOne by where
+         */
+        expect(
+            await userRepository.findOne({
+                where: { username: { inq: ["user1", "user2"] } },
+            })
+        ).containDeep({
+            username: "user2",
+            password: undefined,
+        });
     });
 
     it("findById() Test", async () => {
         await userRepository.deleteAll({});
         await userRepository.createAll([
-            { id: "1", username: "user1", password: "123" },
             { id: "2", username: "user2", password: "231" },
             { id: "3", username: "user3", password: "321" },
         ]);
+
+        /**
+         * Test find by id
+         */
+        expect(await userRepository.findById("2")).containDeep({
+            username: "user2",
+            password: undefined,
+        });
     });
 
     it("count() Test", async () => {
         await userRepository.deleteAll({});
         await userRepository.createAll([
-            { id: "1", username: "user1", password: "123" },
             { id: "2", username: "user2", password: "231" },
             { id: "3", username: "user3", password: "321" },
         ]);
+
+        /**
+         * Test count by where
+         */
+        expect(await userRepository.count()).containDeep({
+            count: 2,
+        });
     });
 
     it("exists() Test", async () => {
         await userRepository.deleteAll({});
         await userRepository.createAll([
-            { id: "1", username: "user1", password: "123" },
             { id: "2", username: "user2", password: "231" },
             { id: "3", username: "user3", password: "321" },
         ]);
+
+        /**
+         * Test exists by id
+         */
+        expect(await userRepository.exists("1")).equal(false);
+        expect(await userRepository.exists("2")).equal(true);
     });
 });
