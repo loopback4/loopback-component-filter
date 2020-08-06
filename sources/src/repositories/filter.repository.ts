@@ -1,81 +1,79 @@
+import { MixinTarget } from "@loopback/core";
 import { InvocationContext } from "@loopback/context";
 import {
-    juggler,
-    Class,
     DefaultCrudRepository,
-    EntityNotFoundError,
     DataObject,
     Options,
     Entity,
     Filter,
+    FilterExcludingWhere,
     Where,
     Fields,
-    Count,
+    EntityNotFoundError,
 } from "@loopback/repository";
 
-import { Ctor } from "../types";
-
-export interface RepositoryConfig<Model extends Entity> {
-    id: keyof Model;
-    where: (
-        context: InvocationContext,
-        where: Where<Model>
-    ) => Promise<Where<Model>>;
-    fields: (
-        context: InvocationContext,
-        fields: Fields<Model>
-    ) => Promise<Fields<Model>>;
-}
-
 /**
- * Repository Type
+ * This interface contains additional types added to FilterRepositoryMixin type
  */
 export interface FilterRepository<
-    Model extends Entity,
-    ModelID,
-    ModelRelations extends object = {}
-> extends DefaultCrudRepository<Model, ModelID, ModelRelations> {}
+    T extends Entity,
+    ID,
+    Relations extends object = {}
+> {}
 
 /**
- * Repository Mixin
+ *  +----------+    +--------+
+ *  | findById |    | exists |
+ *  +----+-----+    +---+----+
+ *       |              |
+ *       |              |
+ *  +----v----+     +---v---+
+ *  | findOne |     | count |
+ *  +---------+     +-------+
+ *
+ *
+ *  +--------+    +------------+   +-------------+
+ *  | update |    | updateById |   | replaceById |
+ *  +----+---+    +-----+------+   +-------+-----+
+ *       |              |                  |
+ *       |              |                  |
+ *       |        +-----v-----+            |
+ *       +--------> updateAll <------------+
+ *                +-----------+
+ *
+ *
+ *  +--------+    +------------+
+ *  | delete |    | deleteById |
+ *  +--+-----+    +------+-----+
+ *     |                 |
+ *     |                 |
+ *     |  +-----------+  |
+ *     +--> deleteAll <--+
+ *        +-----------+
+ */
+/**
+ * Filter repository mixin, add CRUD operations supporting filter
  */
 export function FilterRepositoryMixin<
-    Model extends Entity,
-    ModelID,
-    ModelRelations extends object = {}
->(config: RepositoryConfig<Model>) {
-    /**
-     * Return function with generic type of repository class, returns mixed in class
-     *
-     * bugfix: optional type, load type from value
-     */
+    T extends Entity,
+    ID,
+    Relations extends object = {}
+>(config: {
+    where: (context: InvocationContext, where: Where<T>) => Promise<Where<T>>;
+    fields: (
+        context: InvocationContext,
+        fields: Fields<T>
+    ) => Promise<Fields<T>>;
+}) {
     return function <
-        RepositoryClass extends Class<
-            DefaultCrudRepository<Model, ModelID, ModelRelations>
-        >
-    >(
-        superClass?: RepositoryClass
-    ): RepositoryClass &
-        Class<FilterRepository<Model, ModelID, ModelRelations>> {
-        const parentClass: Class<DefaultCrudRepository<
-            Model,
-            ModelID,
-            ModelRelations
-        >> = superClass || DefaultCrudRepository;
-
-        class Repository extends parentClass
-            implements FilterRepository<Model, ModelID, ModelRelations> {
-            constructor(ctor: Ctor<Model>, dataSource: juggler.DataSource) {
-                super(ctor, dataSource);
-            }
-
+        R extends MixinTarget<DefaultCrudRepository<T, ID, Relations>>
+    >(superClass: R) {
+        class MixedRepository extends superClass
+            implements FilterRepository<T, ID, Relations> {
             /**
-             * Read methods
+             * Filter where and find all entities
              */
-            async find(
-                filter?: Filter<Model>,
-                options?: Options
-            ): Promise<(Model & ModelRelations)[]> {
+            find = async (filter?: Filter<T>, options?: Options) => {
                 const filterContext = new InvocationContext(
                     undefined as any,
                     this,
@@ -97,12 +95,12 @@ export function FilterRepositoryMixin<
                     },
                     options
                 );
-            }
+            };
 
-            async findOne(
-                filter?: Filter<Model>,
-                options?: Options
-            ): Promise<(Model & ModelRelations) | null> {
+            /**
+             * Filter where and find one entity
+             */
+            findOne = async (filter?: Filter<T>, options?: Options) => {
                 const filterContext = new InvocationContext(
                     undefined as any,
                     this,
@@ -124,47 +122,39 @@ export function FilterRepositoryMixin<
                     },
                     options
                 );
-            }
+            };
 
-            async findById(
-                id: ModelID,
-                filter?: Filter<Model>,
+            /**
+             * Filter id and find one entity
+             */
+            findById = async (
+                id: ID,
+                filter?: FilterExcludingWhere<T>,
                 options?: Options
-            ): Promise<Model & ModelRelations> {
-                const item = await this.findOne(
+            ) => {
+                const result = await this.findOne(
                     {
                         ...filter,
-                        where: filter?.where
-                            ? {
-                                  and: [
-                                      filter.where,
-                                      {
-                                          [config.id as any]: id,
-                                      },
-                                  ],
-                              }
-                            : {
-                                  [config.id as any]: id,
-                              },
+                        where: this.entityClass.buildWhereForId(id),
                     },
                     options
                 );
 
-                if (!item) {
+                if (result) {
+                    return result;
+                } else {
                     throw new EntityNotFoundError(this.entityClass, id);
                 }
+            };
 
-                return item;
-            }
-
-            async count(
-                where?: Where<Model>,
-                options?: Options
-            ): Promise<Count> {
+            /**
+             * Filter where and count all entities
+             */
+            count = async (where?: Where<T>, options?: Options) => {
                 const filterContext = new InvocationContext(
                     undefined as any,
                     this,
-                    "count",
+                    "read",
                     Array.from(arguments)
                 );
 
@@ -172,33 +162,28 @@ export function FilterRepositoryMixin<
                     await config.where(filterContext, where || {}),
                     options
                 );
-            }
-
-            async exists(id: ModelID, options?: Options): Promise<boolean> {
-                const count = await this.count(
-                    { [config.id as any]: id },
-                    options
-                );
-
-                return count.count > 0;
-            }
+            };
 
             /**
-             * Update methods
+             * Filter id and check one entity
              */
-            async update(entity: Model, options?: Options): Promise<void> {
-                await super.updateAll(
-                    entity,
-                    { [config.id as any]: (entity as any)[config.id] },
+            exists = async (id: ID, options?: Options) => {
+                const result = await this.count(
+                    this.entityClass.buildWhereForId(id),
                     options
                 );
-            }
 
-            async updateAll(
-                data: DataObject<Model>,
-                where?: Where<Model>,
+                return result.count > 0;
+            };
+
+            /**
+             * Filter where and update all entities
+             */
+            updateAll = async (
+                data: DataObject<T>,
+                where?: Where<T>,
                 options?: Options
-            ): Promise<Count> {
+            ) => {
                 const filterContext = new InvocationContext(
                     undefined as any,
                     this,
@@ -211,38 +196,62 @@ export function FilterRepositoryMixin<
                     await config.where(filterContext, where || {}),
                     options
                 );
-            }
-
-            async updateById(
-                id: ModelID,
-                data: DataObject<Model>,
-                options?: Options
-            ): Promise<void> {
-                await this.updateAll(data, { [config.id as any]: id }, options);
-            }
-
-            async replaceById(
-                id: ModelID,
-                data: DataObject<Model>,
-                options?: Options
-            ): Promise<void> {
-                await this.updateAll(data, { [config.id as any]: id }, options);
-            }
+            };
 
             /**
-             * Delete methods
+             * Filter id and update one entity
              */
-            async delete(entity: Model, options?: Options): Promise<void> {
-                await super.deleteAll(
-                    { [config.id as any]: (entity as any)[config.id] },
+            updateById = async (
+                id: ID,
+                data: DataObject<T>,
+                options?: Options
+            ) => {
+                await this.updateAll(
+                    data,
+                    this.entityClass.buildWhereForId(id),
                     options
                 );
-            }
+            };
 
-            async deleteAll(
-                where?: Where<Model>,
+            /**
+             * Filter id and update one entity
+             */
+            update = async (entity: T, options?: Options) => {
+                await this.updateAll(
+                    entity,
+                    this.entityClass.buildWhereForId(
+                        this.entityClass.getIdOf(entity)
+                    ),
+                    options
+                );
+            };
+
+            /**
+             * Filter id and replace one entity
+             */
+            replaceById = async (
+                id: ID,
+                data: DataObject<T>,
                 options?: Options
-            ): Promise<Count> {
+            ) => {
+                await this.updateAll(
+                    {
+                        ...Object.fromEntries(
+                            Object.entries(
+                                this.entityClass.definition.properties
+                            ).map(([key, _]) => [key, undefined])
+                        ),
+                        ...data,
+                    },
+                    this.entityClass.buildWhereForId(id),
+                    options
+                );
+            };
+
+            /**
+             * Filter where and delete all entities
+             */
+            deleteAll = async (where?: Where<T>, options?: Options) => {
                 const filterContext = new InvocationContext(
                     undefined as any,
                     this,
@@ -254,13 +263,31 @@ export function FilterRepositoryMixin<
                     await config.where(filterContext, where || {}),
                     options
                 );
-            }
+            };
 
-            async deleteById(id: ModelID, options?: Options): Promise<void> {
-                await this.deleteAll({ [config.id as any]: id }, options);
-            }
+            /**
+             * Filter id and delete one entity
+             */
+            delete = async (entity: T, options?: Options) => {
+                await this.deleteAll(
+                    this.entityClass.buildWhereForId(
+                        this.entityClass.getIdOf(entity)
+                    ),
+                    options
+                );
+            };
+
+            /**
+             * Filter id and delete one entity
+             */
+            deleteById = async (id: ID, options?: Options) => {
+                await this.deleteAll(
+                    this.entityClass.buildWhereForId(id),
+                    options
+                );
+            };
         }
 
-        return Repository as any;
+        return MixedRepository;
     };
 }
