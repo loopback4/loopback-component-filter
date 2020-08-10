@@ -125,7 +125,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and find one entity
+             * History findById() using findOne()
              */
             findById = async (
                 id: ID,
@@ -165,7 +165,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and check one entity
+             * History exists() using count()
              */
             exists = async (id: ID, options?: Options) => {
                 const result = await this.count(
@@ -199,7 +199,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and update one entity
+             * History updateById() using updateAll()
              */
             updateById = async (
                 id: ID,
@@ -214,7 +214,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and update one entity
+             * History update() using updateAll()
              */
             update = async (entity: T, options?: Options) => {
                 await this.updateAll(
@@ -227,7 +227,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and replace one entity
+             * History replaceById() using updateAll()
              */
             replaceById = async (
                 id: ID,
@@ -266,7 +266,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and delete one entity
+             * History delete() using deleteAll()
              */
             delete = async (entity: T, options?: Options) => {
                 await this.deleteAll(
@@ -278,7 +278,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter id and delete one entity
+             * History deleteById() using deleteAll()
              */
             deleteById = async (id: ID, options?: Options) => {
                 await this.deleteAll(
