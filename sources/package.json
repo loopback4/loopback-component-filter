@@ -33,18 +33,18 @@
         "dist"
     ],
     "dependencies": {
-        "@loopback/boot": "^2.3.3",
-        "@loopback/context": "^3.9.0",
-        "@loopback/core": "^2.8.0",
-        "@loopback/repository": "^2.7.0",
+        "@loopback/boot": "^2.4.0",
+        "@loopback/context": "^3.9.3",
+        "@loopback/core": "^2.9.2",
+        "@loopback/repository": "^2.10.0",
         "tslib": "^2.0.0"
     },
     "devDependencies": {
-        "@loopback/build": "^5.4.3",
-        "@loopback/testlab": "^3.1.7",
-        "@types/node": "^10.17.26",
+        "@loopback/build": "^6.1.1",
+        "@loopback/testlab": "^3.2.1",
+        "@types/node": "^10.17.27",
         "nodemon": "^2.0.4",
         "ts-node": "^8.10.2",
-        "typescript": "~3.9.5"
+        "typescript": "~3.9.7"
     }
 }
