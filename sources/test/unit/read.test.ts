@@ -4,16 +4,21 @@ import { juggler } from "@loopback/repository";
 import { User } from "./test.model";
 import { UserRepository } from "./test.repository";
 
-describe("Read Model", async () => {
-    const datasource: juggler.DataSource = new juggler.DataSource({
-        name: "db",
-        connector: "memory",
-    });
-    const userRepository = new UserRepository(User, datasource);
-    await userRepository.create({
-        id: "1",
-        username: "user1",
-        password: "123",
+describe("Read Model", () => {
+    let userRepository: UserRepository;
+    before(async () => {
+        const dataSource = new juggler.DataSource({
+            name: "db",
+            connector: "memory",
+        });
+
+        userRepository = new UserRepository(User, dataSource);
+
+        await userRepository.create({
+            id: "1",
+            username: "user1",
+            password: "123",
+        });
     });
 
     it("find() Test", async () => {
