@@ -22,6 +22,16 @@ export interface FilterRepository<
 > {}
 
 /**
+ *  +--------+
+ *  | create |
+ *  +----+---+
+ *       |
+ *       |
+ *  +----v------+
+ *  | createAll |
+ *  +-----------+
+ *
+ *
  *  +----------+    +--------+
  *  | findById |    | exists |
  *  +----+-----+    +---+----+
@@ -59,6 +69,10 @@ export function FilterRepositoryMixin<
     ID,
     Relations extends object = {}
 >(config: {
+    models: (
+        context: InvocationContext,
+        models: DataObject<T>[]
+    ) => Promise<(DataObject<T> | undefined)[]>;
     where: (context: InvocationContext, where: Where<T>) => Promise<Where<T>>;
     fields: (
         context: InvocationContext,
@@ -71,6 +85,36 @@ export function FilterRepositoryMixin<
         class MixedRepository
             extends superClass
             implements FilterRepository<T, ID, Relations> {
+            /**
+             * Map models and create all entities
+             */
+            createAll = async (
+                entities: DataObject<T>[],
+                options?: Options
+            ) => {
+                const filterContext = new InvocationContext(
+                    undefined as any,
+                    this,
+                    "create",
+                    Array.from(arguments)
+                );
+
+                const mappedEntities: any[] = (
+                    await config.models(filterContext, entities || [])
+                ).filter((entity) => entity);
+
+                return await super.createAll(mappedEntities, options);
+            };
+
+            /**
+             * Filter create() using createAll()
+             */
+            create = async (entity: DataObject<T>, options?: Options) => {
+                const result = await this.createAll([entity], options);
+
+                return result[0];
+            };
+
             /**
              * Filter where and find all entities
              */
@@ -126,7 +170,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History findById() using findOne()
+             * Filter findById() using findOne()
              */
             findById = async (
                 id: ID,
@@ -166,7 +210,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History exists() using count()
+             * Filter exists() using count()
              */
             exists = async (id: ID, options?: Options) => {
                 const result = await this.count(
@@ -178,7 +222,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * Filter where and update all entities
+             * Filter where, Map models and update all entities
              */
             updateAll = async (
                 data: DataObject<T>,
@@ -192,15 +236,24 @@ export function FilterRepositoryMixin<
                     Array.from(arguments)
                 );
 
+                const mappedModel = (
+                    await config.models(filterContext, [data])
+                )[0];
+                if (!mappedModel) {
+                    return {
+                        count: 0,
+                    };
+                }
+
                 return await super.updateAll(
-                    data,
+                    mappedModel,
                     await config.where(filterContext, where || {}),
                     options
                 );
             };
 
             /**
-             * History updateById() using updateAll()
+             * Filter updateById() using updateAll()
              */
             updateById = async (
                 id: ID,
@@ -215,7 +268,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History update() using updateAll()
+             * Filter update() using updateAll()
              */
             update = async (entity: T, options?: Options) => {
                 await this.updateAll(
@@ -228,7 +281,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History replaceById() using updateAll()
+             * Filter replaceById() using updateAll()
              */
             replaceById = async (
                 id: ID,
@@ -267,7 +320,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History delete() using deleteAll()
+             * Filter delete() using deleteAll()
              */
             delete = async (entity: T, options?: Options) => {
                 await this.deleteAll(
@@ -279,7 +332,7 @@ export function FilterRepositoryMixin<
             };
 
             /**
-             * History deleteById() using deleteAll()
+             * Filter deleteById() using deleteAll()
              */
             deleteById = async (id: ID, options?: Options) => {
                 await this.deleteAll(
