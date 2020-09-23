@@ -1,20 +1,21 @@
 {
     "name": "loopback-component-filter",
-    "version": "0.5.0",
+    "version": "1.0.0",
     "description": "Loopback component models filter",
     "keywords": [
         "loopback-extension",
         "loopback"
     ],
-    "main": "index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "engines": {
-        "node": ">=10"
+        "node": ">=10.16"
     },
     "scripts": {
-        "clean": "lb-clean dist *.tsbuildinfo",
+        "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
         "prebuild": "npm run clean",
-        "build": "lb-tsc --outDir dist",
-        "build:watch": "lb-tsc --watch --outDir dist",
+        "build": "lb-tsc",
+        "build:watch": "lb-tsc --watch",
         "start": "node .",
         "start:watch": "nodemon .",
         "test": "lb-mocha --allow-console-logs \"test/**/*.test.ts\"",
@@ -24,27 +25,23 @@
         "type": "git",
         "url": "https://github.com/loopback4/loopback-component-filter"
     },
-    "author": "KoLiBer",
+    "author": "KoLiBer <koliberr136a1@gmail.com>",
     "license": "MIT",
     "files": [
         "README.md",
-        "index.js",
-        "index.d.ts",
         "dist"
     ],
     "dependencies": {
-        "@loopback/boot": "^2.3.3",
-        "@loopback/context": "^3.9.0",
-        "@loopback/core": "^2.8.0",
-        "@loopback/repository": "^2.7.0",
+        "@loopback/core": "^2.10.1",
+        "@loopback/repository": "^3.0.1",
         "tslib": "^2.0.0"
     },
     "devDependencies": {
-        "@loopback/build": "^5.4.3",
-        "@loopback/testlab": "^3.1.7",
-        "@types/node": "^10.17.26",
+        "@loopback/build": "^6.2.4",
+        "@loopback/testlab": "^3.2.6",
+        "@types/node": "^10.17.35",
         "nodemon": "^2.0.4",
         "ts-node": "^8.10.2",
-        "typescript": "~3.9.5"
+        "typescript": "~4.0.2"
     }
 }
