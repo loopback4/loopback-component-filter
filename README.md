@@ -47,6 +47,7 @@ export class UserRepository extends FilterRepositoryMixin<
     typeof User.prototype.id,
     UserRelations
 >({
+    models: async (context, entities) => entities,
     where: async (context, where) => where,
     fields: async (context, fields) => fields,
 })<Constructor<DefaultCrudRepository<User, string, UserRelations>>>(
