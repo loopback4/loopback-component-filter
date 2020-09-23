@@ -71,8 +71,8 @@ export function FilterRepositoryMixin<
 >(config: {
     models: (
         context: InvocationContext,
-        models: DataObject<T>[]
-    ) => Promise<(DataObject<T> | undefined)[]>;
+        entities: DataObject<T>[]
+    ) => Promise<DataObject<T>[]>;
     where: (context: InvocationContext, where: Where<T>) => Promise<Where<T>>;
     fields: (
         context: InvocationContext,
@@ -99,11 +99,10 @@ export function FilterRepositoryMixin<
                     Array.from(arguments)
                 );
 
-                const mappedEntities: any[] = (
-                    await config.models(filterContext, entities || [])
-                ).filter((entity) => entity);
-
-                return await super.createAll(mappedEntities, options);
+                return await super.createAll(
+                    await config.models(filterContext, entities || []),
+                    options
+                );
             };
 
             /**
@@ -236,17 +235,17 @@ export function FilterRepositoryMixin<
                     Array.from(arguments)
                 );
 
-                const mappedModel = (
+                const mappedData = (
                     await config.models(filterContext, [data])
                 )[0];
-                if (!mappedModel) {
+                if (!mappedData) {
                     return {
                         count: 0,
                     };
                 }
 
                 return await super.updateAll(
-                    mappedModel,
+                    mappedData,
                     await config.where(filterContext, where || {}),
                     options
                 );

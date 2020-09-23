@@ -12,6 +12,8 @@ import { FilterRepositoryMixin } from "../../src";
 import { User } from "./test.model";
 
 export class UserRepository extends FilterRepositoryMixin<User, string, {}>({
+    models: async (context, entities) =>
+        entities.filter((entity) => entity.username != "userX"),
     where: async (context, where) => ({
         and: [{ username: { neq: "user1" } }, where],
     }),
