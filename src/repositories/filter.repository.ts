@@ -68,7 +68,8 @@ export function FilterRepositoryMixin<
     return function <
         R extends MixinTarget<DefaultCrudRepository<T, ID, Relations>>
     >(superClass: R) {
-        class MixedRepository extends superClass
+        class MixedRepository
+            extends superClass
             implements FilterRepository<T, ID, Relations> {
             /**
              * Filter where and find all entities
