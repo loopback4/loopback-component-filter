@@ -2,6 +2,10 @@
 
 ## v1.0.0
 
+-   **Fix**: remove sources folder from ci file
+
+## v1.0.0
+
 -   **Deps**: update packages
 -   **Clean**: remove `sources` folder
 -   **Feat**: add `model mapper` method for `create`, `update` operations
