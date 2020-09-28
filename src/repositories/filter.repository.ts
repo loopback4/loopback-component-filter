@@ -1,4 +1,4 @@
-import { MixinTarget } from "@loopback/core";
+import { MixinTarget, Context } from "@loopback/core";
 import { InvocationContext } from "@loopback/context";
 import {
     DefaultCrudRepository,
@@ -20,6 +20,10 @@ export interface FilterRepository<
     ID,
     Relations extends object = {}
 > {}
+
+export interface FilterOptions extends Options {
+    context: Context;
+}
 
 /**
  *  +--------+
@@ -90,10 +94,10 @@ export function FilterRepositoryMixin<
              */
             createAll = async (
                 entities: DataObject<T>[],
-                options?: Options
+                options?: FilterOptions
             ) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "create",
                     Array.from(arguments)
@@ -108,7 +112,7 @@ export function FilterRepositoryMixin<
             /**
              * Filter create() using createAll()
              */
-            create = async (entity: DataObject<T>, options?: Options) => {
+            create = async (entity: DataObject<T>, options?: FilterOptions) => {
                 const result = await this.createAll([entity], options);
 
                 return result[0];
@@ -117,9 +121,9 @@ export function FilterRepositoryMixin<
             /**
              * Filter where and find all entities
              */
-            find = async (filter?: Filter<T>, options?: Options) => {
+            find = async (filter?: Filter<T>, options?: FilterOptions) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "read",
                     Array.from(arguments)
@@ -144,9 +148,9 @@ export function FilterRepositoryMixin<
             /**
              * Filter where and find one entity
              */
-            findOne = async (filter?: Filter<T>, options?: Options) => {
+            findOne = async (filter?: Filter<T>, options?: FilterOptions) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "read",
                     Array.from(arguments)
@@ -174,7 +178,7 @@ export function FilterRepositoryMixin<
             findById = async (
                 id: ID,
                 filter?: FilterExcludingWhere<T>,
-                options?: Options
+                options?: FilterOptions
             ) => {
                 const result = await this.findOne(
                     {
@@ -194,9 +198,9 @@ export function FilterRepositoryMixin<
             /**
              * Filter where and count all entities
              */
-            count = async (where?: Where<T>, options?: Options) => {
+            count = async (where?: Where<T>, options?: FilterOptions) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "read",
                     Array.from(arguments)
@@ -211,7 +215,7 @@ export function FilterRepositoryMixin<
             /**
              * Filter exists() using count()
              */
-            exists = async (id: ID, options?: Options) => {
+            exists = async (id: ID, options?: FilterOptions) => {
                 const result = await this.count(
                     this.entityClass.buildWhereForId(id),
                     options
@@ -226,10 +230,10 @@ export function FilterRepositoryMixin<
             updateAll = async (
                 data: DataObject<T>,
                 where?: Where<T>,
-                options?: Options
+                options?: FilterOptions
             ) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "update",
                     Array.from(arguments)
@@ -257,7 +261,7 @@ export function FilterRepositoryMixin<
             updateById = async (
                 id: ID,
                 data: DataObject<T>,
-                options?: Options
+                options?: FilterOptions
             ) => {
                 await this.updateAll(
                     data,
@@ -269,7 +273,7 @@ export function FilterRepositoryMixin<
             /**
              * Filter update() using updateAll()
              */
-            update = async (entity: T, options?: Options) => {
+            update = async (entity: T, options?: FilterOptions) => {
                 await this.updateAll(
                     entity,
                     this.entityClass.buildWhereForId(
@@ -285,7 +289,7 @@ export function FilterRepositoryMixin<
             replaceById = async (
                 id: ID,
                 data: DataObject<T>,
-                options?: Options
+                options?: FilterOptions
             ) => {
                 await this.updateAll(
                     {
@@ -304,9 +308,9 @@ export function FilterRepositoryMixin<
             /**
              * Filter where and delete all entities
              */
-            deleteAll = async (where?: Where<T>, options?: Options) => {
+            deleteAll = async (where?: Where<T>, options?: FilterOptions) => {
                 const filterContext = new InvocationContext(
-                    undefined as any,
+                    options?.context as Context,
                     this,
                     "delete",
                     Array.from(arguments)
@@ -321,7 +325,7 @@ export function FilterRepositoryMixin<
             /**
              * Filter delete() using deleteAll()
              */
-            delete = async (entity: T, options?: Options) => {
+            delete = async (entity: T, options?: FilterOptions) => {
                 await this.deleteAll(
                     this.entityClass.buildWhereForId(
                         this.entityClass.getIdOf(entity)
@@ -333,7 +337,7 @@ export function FilterRepositoryMixin<
             /**
              * Filter deleteById() using deleteAll()
              */
-            deleteById = async (id: ID, options?: Options) => {
+            deleteById = async (id: ID, options?: FilterOptions) => {
                 await this.deleteAll(
                     this.entityClass.buildWhereForId(id),
                     options
