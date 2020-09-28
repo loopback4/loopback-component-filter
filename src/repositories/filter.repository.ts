@@ -12,6 +12,10 @@ import {
     EntityNotFoundError,
 } from "@loopback/repository";
 
+export interface FilterOptions extends Options {
+    context: Context;
+}
+
 /**
  * This interface contains additional types added to FilterRepositoryMixin type
  */
@@ -20,10 +24,6 @@ export interface FilterRepository<
     ID,
     Relations extends object = {}
 > {}
-
-export interface FilterOptions extends Options {
-    context: Context;
-}
 
 /**
  *  +--------+
