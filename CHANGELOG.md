@@ -1,3 +1,10 @@
+# [1.3.0-next.2](https://github.com/loopback4/loopback-component-filter/compare/1.3.0-next.1...1.3.0-next.2) (2021-09-12)
+
+
+### Bug Fixes
+
+* change README ([f34cbf8](https://github.com/loopback4/loopback-component-filter/commit/f34cbf88913a9998dcc7d97c4a73a0784f1e55a2))
+
 # [1.3.0-next.1](https://github.com/loopback4/loopback-component-filter/compare/1.2.0...1.3.0-next.1) (2021-09-12)
 
 
