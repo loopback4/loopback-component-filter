@@ -1,5 +1,7 @@
 # loopback-component-filter
 
+[![Build Status](https://travis-ci.com/loopback4/loopback-component-filter.svg?branch=master)](https://travis-ci.com/loopback4/loopback-component-filter)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Floopback4%2Floopback-component-filter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Floopback4%2Floopback-component-filter?ref=badge_shield)
 ![Travis (.org) branch](https://img.shields.io/travis/loopback4/loopback-component-filter/master)
 ![npm](https://img.shields.io/npm/v/loopback-component-filter)
 ![npm bundle size](https://img.shields.io/bundlephobia/min/loopback-component-filter)
@@ -67,3 +69,6 @@ export class UserRepository extends FilterRepositoryMixin<
 
 This project is licensed under the [MIT license](LICENSE.md).  
 Copyright (c) KoLiBer (koliberr136a1@gmail.com)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Floopback4%2Floopback-component-filter.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Floopback4%2Floopback-component-filter?ref=badge_large)
