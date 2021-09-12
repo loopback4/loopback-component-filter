@@ -1,3 +1,10 @@
+# [1.3.0-next.1](https://github.com/loopback4/loopback-component-filter/compare/1.2.0...1.3.0-next.1) (2021-09-12)
+
+
+### Features
+
+* **fossabot:** add license scan report and status ([7d2d607](https://github.com/loopback4/loopback-component-filter/commit/7d2d6071d072e1e73c6e86d88e9817c36963c881))
+
 # [1.2.0](https://github.com/loopback4/loopback-component-filter/compare/1.1.0...1.2.0) (2021-09-12)
 
 
