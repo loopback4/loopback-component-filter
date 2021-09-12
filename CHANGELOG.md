@@ -1,5 +1,3 @@
-# Changelog
-
 ## v1.1.0
 
 -   **Feat**: add `context` to options and pass into `InvocationContext`
